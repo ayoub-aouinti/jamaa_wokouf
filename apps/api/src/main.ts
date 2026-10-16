@@ -2,8 +2,9 @@ import 'reflect-metadata';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { NoStoreOnErrorFilter } from './common/no-store.filter.js';
 
 // apps/api/.env إن وُجد — بلا حزمةٍ إضافية (Node ≥ 20.12)
 const envFile = fileURLToPath(new URL('../.env', import.meta.url));
@@ -12,6 +13,7 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
   app.setGlobalPrefix('api');
+  app.useGlobalFilters(new NoStoreOnErrorFilter(app.get(HttpAdapterHost).httpAdapter));
 
   // الويبُ والجوالُ من أصولٍ أخرى. CORS_ORIGINS قائمةٌ مفصولةٌ بفواصل، و«*» للتطوير.
   const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
