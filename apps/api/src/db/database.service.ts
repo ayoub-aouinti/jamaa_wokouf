@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import pg from 'pg';
 
 // أعدادُ Postgres الكبيرة (bigint/count) تأتي نصّاً افتراضاً؛ وكلُّ أعدادنا
@@ -11,7 +11,7 @@ pg.types.setTypeParser(20, (v) => Number(v));
  * أو تُشدِّده.
  */
 @Injectable()
-export class DatabaseService implements OnModuleDestroy {
+export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly log = new Logger('Database');
   readonly pool: pg.Pool;
 
@@ -60,6 +60,22 @@ export class DatabaseService implements OnModuleDestroy {
       throw e;
     } finally {
       client.release();
+    }
+  }
+
+  /** فحصٌ عند الإقلاع: رسالةٌ واحدةٌ واضحة بدل خطأٍ في كلِّ طلب. */
+  async onModuleInit() {
+    const hints: Record<string, string> = {
+      '3D000': 'القاعدةُ المسمّاة في DATABASE_URL غيرُ موجودة: npm run db:create ثم db/migrate.py (انظر README).',
+      '28P01': 'اسمُ المستخدم أو كلمةُ السرّ في DATABASE_URL خطأ.',
+      ECONNREFUSED: 'لا خادمَ Postgres على العنوان والمنفذ في DATABASE_URL.',
+    };
+    try {
+      const r = await this.one<{ ok: boolean }>(`SELECT to_regclass('public.rulings') IS NOT NULL AS ok`);
+      if (!r?.ok) this.log.error('القاعدةُ موجودةٌ لكن لا جداولَ للجامع فيها: انقل البياناتِ بـ db/migrate.py.');
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? '';
+      this.log.error(hints[code] ?? `تعذَّر الاتصالُ بالقاعدة: ${(e as Error).message}`);
     }
   }
 

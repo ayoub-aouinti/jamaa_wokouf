@@ -25,8 +25,12 @@ npm install
 # ١- الاتصالُ بالقاعدة
 cp apps/api/.env.example apps/api/.env      # واملأ DATABASE_URL و ADMIN_TOKENS
 
-# ٢- سجلُّ المراجعة (مرّةً بعد الهجرة، ويُعاد بلا ضرر)
-npm run db:app
+# ٢- القاعدةُ والبيانات (مرّةً واحدة)
+npm run db:create                                  # يُنشئ القاعدةَ المسمّاة في DATABASE_URL إن غابت
+pip install -r requirements.txt
+python db/migrate.py out/waqf.db "<DATABASE_URL>"  # ينقل الأحكامَ من SQLite ويتحقَّق من العدد
+npm run db:app                                     # سجلُّ المراجعة، ويُعاد بلا ضرر
+npm run db:check                                   # يسرد قواعدَ الخادم وأيُّها فيه الجامع
 
 # ٣- الخادمُ والويب، كلٌّ في طرفيّة
 npm run api        # http://localhost:3000/api

@@ -42,6 +42,18 @@ export function MetaProvider({ children }: { children: ReactNode }) {
         <p className="boot-title">تعذَّر الاتصالُ بالواجهة البرمجية</p>
         <p className="muted">{error.message}</p>
         <p className="muted small">تحقَّق أنّ الخادم يعمل (npm run api) وأنّ DATABASE_URL صحيح.</p>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => {
+            cats.reload();
+            srcs.reload();
+            suras.reload();
+            riw.reload();
+          }}
+        >
+          أعِد المحاولة
+        </button>
       </div>
     );
   }
