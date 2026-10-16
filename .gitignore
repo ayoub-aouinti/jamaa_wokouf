@@ -17,3 +17,13 @@ out/*.docx
 
 # نسخُ القاعدة الاحتياطية — ٤٠ ميغا لكلِّ واحدة
 out/waqf.db.bak*
+
+# Node — الواجهة البرمجية والويب والجوال
+node_modules/
+dist/
+.expo/
+*.tsbuildinfo
+.env
+.env.local
+apps/mobile/ios/
+apps/mobile/android/
