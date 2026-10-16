@@ -18,7 +18,7 @@
 """
 import csv, json, sqlite3, sys
 from collections import defaultdict, Counter
-from merge_book import CAT, TERM
+from merge_book import CAT, TERM, NEEDS_REVIEW
 
 RANK = {'عالية': 3, 'متوسطة': 2, 'تحتاج مراجعة': 1}
 
@@ -102,7 +102,8 @@ def main(db, source_id, csv_path):
                      '/'.join(alt) or None,
                      '/'.join(TERM[s] for s in alt) or None,
                      ' · '.join(note),
-                     'تعارضَ الشاهدان' if clash else None,
+                     'تعارضَ الشاهدان' if clash
+                     else NEEDS_REVIEW.get(best['symbol']),
                      'proposed', conf,
                      ('قولُ صاحب الكتاب' if own else 'لم يُصرَّح بقائله في الموضع')))
 

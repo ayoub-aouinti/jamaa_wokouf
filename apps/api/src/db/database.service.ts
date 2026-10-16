@@ -20,6 +20,9 @@ export class DatabaseService implements OnModuleDestroy {
     if (!connectionString) {
       throw new Error('DATABASE_URL غيرُ معرَّف. انسخ apps/api/.env.example إلى apps/api/.env واملأه.');
     }
+    if (/\/\/USER:PASSWORD@/.test(connectionString)) {
+      throw new Error('DATABASE_URL في apps/api/.env ما زال مثالَ .env.example (USER:PASSWORD). ضع مستخدمَ Postgres وكلمةَ سرِّه.');
+    }
     this.pool = new pg.Pool({
       connectionString,
       max: Number(process.env.PG_POOL_MAX ?? 10),
