@@ -1,4 +1,14 @@
 /* جامع الوقوف — رموزُ التصميم من gen/tokens.py */
+
+/* خطوطُ المصاحف. نصُّ ورش وقالون في القاعدة مرمَّزٌ لخطِّ المصحف المغربي
+   (Maghribi) الذي بُنيت عليه لوحاتُ التصميم، فبغيره تظهر بعضُ الحروف رموزاً.
+   والملفّاتُ ليست في الريبو: تُوضَع في apps/web/public/fonts/ بهذه الأسماء.
+   وما غاب منها رجع العرضُ إلى Amiri Quran. */
+@font-face { font-family: 'Maghribi'; src: url('/fonts/Maghribi.otf') format('opentype'); font-display: swap; }
+@font-face { font-family: 'UthQalun'; src: url('/fonts/UthQalun.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'UthDuri'; src: url('/fonts/UthDuri.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'UthHafs'; src: url('/fonts/UthHafs.otf') format('opentype'); font-display: swap; }
+
 :root {
   --ink: #1c1815;
   --leaf: #e9e6dc;
@@ -132,18 +142,24 @@ textarea { height: auto; padding: 8px 10px; width: 100%; }
 .legend li { display: flex; align-items: center; gap: 9px; }
 
 .page-col { padding: 22px 24px 40px; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.page-head { width: 100%; max-width: 720px; }
+.page-head { width: 100%; max-width: 720px; margin-bottom: 10px; }
+.page-head h1 { margin: 0; }
+.page-head p { margin: 0; }
 .mushaf-frame { width: 100%; max-width: 720px; border: 1.5px solid var(--lapis); padding: 7px; background: var(--paper); }
 .mushaf-inner { border: 0.8px solid var(--ochre); padding: 22px 26px 18px; }
 .mushaf-title { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; color: var(--ochre); font-family: var(--display); font-size: 14px; }
 .mushaf-title span { flex: 1; height: 1px; background: var(--ochre); opacity: 0.5; }
 .mushaf-title b { font-weight: 500; }
-.mushaf-text { margin: 0; font-family: var(--quran); font-size: 25px; line-height: 3; text-align: justify; }
+.mushaf-text { margin: 0; font-family: 'UthHafs', var(--quran); font-size: 25px; line-height: 3; text-align: justify; }
+.mushaf-text.riw-warsh { font-family: 'Maghribi', var(--quran); }
+.mushaf-text.riw-qalun { font-family: 'UthQalun', 'Maghribi', var(--quran); }
+.mushaf-text.riw-duri { font-family: 'UthDuri', var(--quran); }
 .mushaf-foot { margin: 12px 0 0; padding-top: 8px; border-top: 1px solid var(--rule); }
 .w.marked {
-  position: relative; display: inline; padding: 1px 3px; margin: 0 1px;
+  position: relative; display: inline-block; padding: 0 3px; margin: 0 1px;
   border: 0; border-bottom: 2px solid; border-radius: 2px; background: var(--hl);
-  font: inherit; color: inherit; cursor: pointer; line-height: inherit;
+  font: inherit; color: inherit; cursor: pointer;
+  line-height: 1.5; /* بعد font لأنّ font يُعيد ضبطَه */
 }
 .w.marked:hover { background: var(--hl-on); }
 .w.marked.sel { background: var(--hl-on); box-shadow: 0 0 0 2px var(--ink); }
@@ -274,9 +290,13 @@ textarea { height: auto; padding: 8px 10px; width: 100%; }
 @media (max-width: 860px) {
   .topbar { flex-wrap: wrap; gap: 8px 14px; padding: 8px 16px; }
   .topsearch { width: 100%; }
+  .topnav { flex-wrap: wrap; }
+  .riw-list li { grid-template-columns: minmax(0, 1fr); }
+  .hits a { grid-template-columns: minmax(0, 1fr) auto; }
+  .hits a > :last-child { grid-column: 1 / -1; }
   .topsearch input { width: 100%; }
-  .reader, .reader.with-panel { grid-template-columns: 1fr; }
-  .side { position: static; max-height: none; border-inline-end: 0; border-bottom: 1px solid var(--rule); }
+  .reader, .reader.with-panel { grid-template-columns: minmax(0, 1fr); }
+  .side { order: 2; position: static; max-height: none; border-inline-end: 0; border-bottom: 1px solid var(--rule); }
   .page-col { padding: 16px; }
   .mushaf-inner { padding: 14px; }
   .mushaf-text { font-size: 22px; }
@@ -284,7 +304,7 @@ textarea { height: auto; padding: 8px 10px; width: 100%; }
   .hero h1 { font-size: 32px; }
   .counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .facts { grid-template-columns: 1fr; }
-  .admin { grid-template-columns: 1fr; }
+  .admin { grid-template-columns: minmax(0, 1fr); }
   .admin-main { padding: 16px; }
   .review-grid { grid-template-columns: 1fr; }
   .table { display: block; overflow-x: auto; }

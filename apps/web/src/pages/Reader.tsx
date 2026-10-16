@@ -24,7 +24,7 @@ export function Reader() {
   const meta = useMeta();
   const nav = useNavigate();
   const { sura: suraParam } = useParams();
-  const [sp] = useSearchParams();
+  const [sp, setSp] = useSearchParams();
   const sura = Math.min(Math.max(Number(suraParam) || 1, 1), 114);
   const from = Number(sp.get('from')) || 1;
   const focusSeq = Number(sp.get('seq')) || null;
@@ -38,8 +38,18 @@ export function Reader() {
   useEffect(() => setSelected(focusSeq), [focusSeq]);
 
   const page = useAsync(() => api.ayat(sura, from), [sura, from]);
-  const riwOk = meta.riwayat.some((r) => r.id === riwaya && r.has_text);
-  const activeRiwaya = riwOk ? riwaya : 'hafs';
+  // ‎?riwaya=‎ في الرابط يُقدَّم على المحفوظ، فيُشارَك الموضعُ بروايته
+  const wanted = sp.get('riwaya') || riwaya;
+  const riwOk = meta.riwayat.some((r) => r.id === wanted && r.has_text);
+  const activeRiwaya = riwOk ? wanted : 'hafs';
+  const pickRiwaya = (id: string) => {
+    setRiwaya(id);
+    if (sp.has('riwaya')) {
+      const next = new URLSearchParams(sp);
+      next.delete('riwaya');
+      setSp(next, { replace: true });
+    }
+  };
   const riwText = useAsync<RiwayaText | null>(
     () =>
       page.data && activeRiwaya !== 'hafs'
@@ -79,7 +89,7 @@ export function Reader() {
               role="radio"
               aria-checked={activeRiwaya === r.id}
               disabled={!r.has_text}
-              onClick={() => setRiwaya(r.id)}
+              onClick={() => pickRiwaya(r.id)}
               style={{ borderInlineStartColor: riwayaColor[r.id] ?? '#5A6B5D' }}
             >
               <span>{r.name}</span>
@@ -152,19 +162,16 @@ export function Reader() {
 
       <main className="page-col">
         <div className="page-head">
-          <h1>
-            سورة {suraMeta?.name}
-            <span className="muted small">
-              {' '}
-              · {arNum(suraMeta?.ayat)} آية
-              {page.data && (
-                <>
-                  {' '}
-                  · الآيات {arNum(page.data.from)}–{arNum(page.data.to)}
-                </>
-              )}
-            </span>
-          </h1>
+          <h1>سورة {suraMeta?.name}</h1>
+          <p className="muted small">
+            {arNum(suraMeta?.ayat)} آية
+            {page.data && (
+              <>
+                {' '}
+                · الآيات {arNum(page.data.from)}–{arNum(page.data.to)}
+              </>
+            )}
+          </p>
         </div>
 
         <div className="mushaf-frame">
@@ -177,7 +184,7 @@ export function Reader() {
             {page.loading && !page.data && <p className="muted">يُحمَّل…</p>}
             {page.error && <p className="error">{page.error.message}</p>}
             {page.data && (
-              <p className="mushaf-text" style={{ ['--riw' as string]: riwayaColor[activeRiwaya] }}>
+              <p className={`mushaf-text riw-${activeRiwaya}`} style={{ ['--riw' as string]: riwayaColor[activeRiwaya] }}>
                 {activeRiwaya === 'hafs' ? (
                   <HafsText
                     page={page.data}

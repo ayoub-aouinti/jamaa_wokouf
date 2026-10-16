@@ -2,14 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DatabaseService } from '../db/database.service.js';
 import { normalizedSql, RULING_BRIEF_JSON, RULING_FULL_COLS, WORD_COLS } from '../common/sql.js';
 
-/** نحوُ عددِ كلمات صفحة المصحف؛ به تُقسَم السورةُ في القارئ. */
-const PAGE_WORDS = 150;
-const MAX_AYAT = 40;
-
-interface AyahSize {
-  ayah: number;
-  n: number;
-}
+import { MAX_AYAT, pageBackward, pageForward, type AyahSize } from './pagination.js';
 
 @Injectable()
 export class MushafService {
@@ -34,33 +27,6 @@ export class MushafService {
     );
   }
 
-  /** نطاقٌ يبدأ من آيةٍ ويمتدّ حتى يقارب صفحة. */
-  private static forward(sizes: AyahSize[], from: number) {
-    let total = 0;
-    let to = from;
-    for (const s of sizes) {
-      if (s.ayah < from) continue;
-      if (total > 0 && (total + s.n > PAGE_WORDS || s.ayah - from >= MAX_AYAT)) break;
-      total += s.n;
-      to = s.ayah;
-    }
-    return { from, to };
-  }
-
-  /** النطاقُ السابقُ الذي ينتهي قبل آيةٍ ما. */
-  private static backward(sizes: AyahSize[], before: number) {
-    let total = 0;
-    let from = before - 1;
-    for (let i = sizes.length - 1; i >= 0; i--) {
-      const s = sizes[i];
-      if (s.ayah >= before) continue;
-      if (total > 0 && (total + s.n > PAGE_WORDS || before - 1 - s.ayah >= MAX_AYAT)) break;
-      total += s.n;
-      from = s.ayah;
-    }
-    return { from, to: before - 1 };
-  }
-
   /**
    * آياتٌ من سورةٍ بكلماتها، ومع كلِّ كلمةٍ أحكامُ كلِّ مصادرها.
    * الحكمُ هنا موجَزٌ (بلا العلّة)، والعلّةُ كاملةً في تفصيل الموضع.
@@ -74,7 +40,7 @@ export class MushafService {
       if (toQ < from) throw new BadRequestException('to أقلُّ من from.');
       to = Math.min(toQ, meta.ayat, from + MAX_AYAT - 1);
     } else {
-      to = MushafService.forward(sizes, from).to;
+      to = pageForward(sizes, from).to;
     }
 
     const rows = await this.db.query<{ ayah: number; words: unknown[] }>(
@@ -101,8 +67,8 @@ export class MushafService {
       from,
       to,
       ayat: rows.map((r) => ({ sura, ayah: r.ayah, words: r.words })),
-      prev: from > 1 ? MushafService.backward(sizes, from) : null,
-      next: to < meta.ayat ? MushafService.forward(sizes, to + 1) : null,
+      prev: from > 1 ? pageBackward(sizes, from) : null,
+      next: to < meta.ayat ? pageForward(sizes, to + 1) : null,
     };
   }
 
