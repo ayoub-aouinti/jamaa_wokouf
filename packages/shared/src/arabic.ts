@@ -1,14 +1,11 @@
 // أدواتُ النصّ العربي، مشتركةٌ بين الويب والجوال.
 
-const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-
-/** يكتب العددَ بالأرقام العربية المشرقية، مع فاصل الآلاف «٬». */
+/** يكتب العددَ بالأرقام الغربية (0-9)، مع فاصل الآلاف «,». */
 export function arNum(n: number | null | undefined): string {
   if (n == null) return '—';
-  const s = Math.trunc(n)
+  return Math.trunc(n)
     .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
-  return s.replace(/\d/g, (d) => AR_DIGITS[Number(d)]);
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 /** علاماتُ الضبط والتطويل وعلاماتُ المصحف الصغيرة التي تُسقَط عند البحث. */
