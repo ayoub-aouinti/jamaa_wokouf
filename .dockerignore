@@ -8,7 +8,8 @@ riw
 bundle
 data
 out
-apps/mobile
+apps/mobile/*
+!apps/mobile/package.json
 **/.env
 *.pyc
 __pycache__

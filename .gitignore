@@ -28,6 +28,6 @@ dist/
 apps/mobile/ios/
 apps/mobile/android/
 
-# خطوطُ المصاحف: ملفّاتُ المستخدم، رخصتُها لم تُراجَع للتوزيع
-apps/web/public/fonts/*
-!apps/web/public/fonts/README.txt
+# # خطوطُ المصاحف: ملفّاتُ المستخدم، رخصتُها لم تُراجَع للتوزيع
+# apps/web/public/fonts/*
+# !apps/web/public/fonts/README.txt
