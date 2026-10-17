@@ -16,12 +16,18 @@ async function bootstrap() {
   app.useGlobalFilters(new NoStoreOnErrorFilter(app.get(HttpAdapterHost).httpAdapter));
 
   // الويبُ والجوالُ من أصولٍ أخرى. CORS_ORIGINS قائمةٌ مفصولةٌ بفواصل، و«*» للتطوير.
-  const origins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
+  // والجهازُ نفسُه (localhost و127.0.0.1 بأيِّ منفذ) مسموحٌ دائماً: فيه ويبُ
+  // Vite (5173) ومعاينةُ Expo في المتصفّح (8081) وغيرُهما.
+  const origins = (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  const LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
   app.enableCors({
-    origin: origins.includes('*') ? true : origins,
+    origin: origins.includes('*')
+      ? true
+      : (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) =>
+          cb(null, !origin || LOCAL.test(origin) || origins.includes(origin)),
     methods: ['GET', 'POST', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     maxAge: 600,

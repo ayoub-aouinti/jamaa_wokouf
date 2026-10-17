@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+.git
+.expo
+books
+ocr
+riw
+bundle
+data
+out
+apps/mobile
+**/.env
+*.pyc
+__pycache__

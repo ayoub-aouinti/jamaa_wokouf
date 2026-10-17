@@ -30,12 +30,12 @@ export default function SuraList() {
             </Text>
             <View style={[row, s.actions]}>
               <Link href="/search" asChild>
-                <Pressable style={[styles.btn, s.flex]}>
+                <Pressable style={StyleSheet.flatten([styles.btn, s.flex])}>
                   <Text style={styles.btnText}>البحث في المصحف</Text>
                 </Pressable>
               </Link>
               <Link href="/sources" asChild>
-                <Pressable style={[styles.btn, s.flex]}>
+                <Pressable style={StyleSheet.flatten([styles.btn, s.flex])}>
                   <Text style={styles.btnText}>المصادر</Text>
                 </Pressable>
               </Link>

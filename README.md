@@ -40,6 +40,12 @@ npm run web        # http://localhost:5173  (يُمرِّر /api إلى الخا
 npm run mobile     # ثم امسح الرمز بـ Expo Go
 ```
 
+**تنبيه في تثبيت حزم الجوال:** بعد `npx expo install <حزمة>` داخل `apps/mobile`
+شغِّل `npm install` من جذر المستودع. فإن بقيت الحزمةُ في
+`apps/mobile/node_modules` لم يجدها `expo start` (خطأ `Cannot find module
+'expo-router/...'`)، والعلاجُ حذفُ `node_modules` و`package-lock.json` ثم
+`npm install` من الجذر.
+
 يجد الجوالُ الخادمَ تلقائياً على عنوان الجهاز الذي يُشغِّل Metro، منفذ 3000.
 فإن كان الخادمُ في مكانٍ آخر فعرِّف `EXPO_PUBLIC_API_URL`.
 
