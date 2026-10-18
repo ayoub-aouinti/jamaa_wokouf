@@ -5,7 +5,7 @@
    والملفّاتُ ليست في الريبو: تُوضَع في apps/web/public/fonts/ بهذه الأسماء.
    وما غاب منها رجع العرضُ إلى Amiri Quran. */
 @font-face { font-family: 'Maghribi'; src: url('/fonts/Maghribi.otf') format('opentype'); font-display: swap; }
-@font-face { font-family: 'UthQalun'; src: url('/fonts/UthQalun.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'UthQalun'; src: url('/fonts/UthQalun.fix.ttf') format('truetype'); font-display: swap; }
 @font-face { font-family: 'UthDuri'; src: url('/fonts/UthDuri.ttf') format('truetype'); font-display: swap; }
 @font-face { font-family: 'UthHafs'; src: url('/fonts/UthHafs.otf') format('opentype'); font-display: swap; }
 
@@ -152,15 +152,7 @@ textarea { height: auto; padding: 8px 10px; width: 100%; }
 .mushaf-title b { font-weight: 500; }
 .mushaf-text { margin: 0; font-family: 'UthHafs', var(--quran); font-size: 25px; line-height: 3; text-align: justify; }
 .mushaf-text.riw-warsh { font-family: 'Maghribi', var(--quran); }
-/* خطُّ قالون يضع وصلاتِ التشكيل في GSUB `mark` (غير معتاد)، ولا يفعّله كروم أندرويد
-   من تلقاء نفسه فيقع التشكيلُ في غير محلّه؛ فنفعّله ونفعّل ما حوله صراحةً. */
-.mushaf-text.riw-qalun {
-  font-family: 'UthQalun', 'Maghribi', var(--quran);
-  font-feature-settings: "mark" 1, "mkmk" 1, "ccmp" 1, "calt" 1, "liga" 1, "rlig" 1;
-  font-kerning: normal;
-  text-rendering: optimizeLegibility;
-}
-.mushaf-text.riw-qalun .w { font-feature-settings: inherit; }
+.mushaf-text.riw-qalun { font-family: 'UthQalun', 'Maghribi', var(--quran); }
 .mushaf-text.riw-duri { font-family: 'UthDuri', var(--quran); }
 .mushaf-foot { margin: 12px 0 0; padding-top: 8px; border-top: 1px solid var(--rule); }
 .w.marked {
