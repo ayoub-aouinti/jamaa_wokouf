@@ -1,18 +1,39 @@
 import { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { arNum, sourceColor, sourceShort, type ReviewItem } from '@jamei/shared';
+import { arNum, sourceColor, sourceShort, type ReviewItem, type RulingPatchBody } from '@jamei/shared';
 import { CategoryBadge, StatusBadge } from '../../components/Badges';
 import { RulingCard } from '../../components/RulingCard';
+import { RulingEditor } from '../../components/RulingEditor';
 import { api } from '../../lib/api';
 import { useMeta } from '../../lib/meta';
 import { useStored } from '../../lib/useStored';
+import { AddRuling } from './AddRuling';
 import type { AdminCtx } from './AdminLayout';
 
 /**
  * طابورُ المراجعة. «اعتمد» يرفع الحكمَ إلى محقَّق. «ارفض» لا يحذفه: يبقى
  * مقترَحاً ويُثبَت سببُ الردّ معه. «أجِّل» يتخطّاه في هذه الجلسة وحدها.
+ * «عدِّل» يفتح لفظَ المصدر والفئة والعلّة للتصحيح قبل الاعتماد. وتبويبُ
+ * «من المصحف» يُدخِل وقفاً جديداً بالنقر على كلمته.
  */
 export function Review() {
+  const [tab, setTab] = useStored<'queue' | 'mushaf'>('review.tab', 'queue');
+  return (
+    <div>
+      <div className="tabs" role="tablist" aria-label="المراجعة">
+        <button type="button" role="tab" aria-selected={tab === 'queue'} onClick={() => setTab('queue')}>
+          الطابور
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'mushaf'} onClick={() => setTab('mushaf')}>
+          أضِف وقفاً من المصحف
+        </button>
+      </div>
+      {tab === 'queue' ? <Queue /> : <AddRuling />}
+    </div>
+  );
+}
+
+function Queue() {
   const meta = useMeta();
   const { canWrite } = useOutletContext<AdminCtx>();
   const [source, setSource] = useStored<string>('review.source', '');
@@ -23,6 +44,7 @@ export function Review() {
   const [err, setErr] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const load = async (after?: string) => {
     setBusy(true);
@@ -48,6 +70,7 @@ export function Review() {
   const advance = () => {
     setReason('');
     setRejecting(false);
+    setEditing(false);
     if (i + 1 < items.length) setI(i + 1);
     else if (cur) void load(`${cur.word.seq}:${cur.ruling.source}`);
   };
@@ -60,6 +83,30 @@ export function Review() {
       await api.decide(cur.word.seq, cur.ruling.source, { decision, reason: decision === 'reject' ? reason : undefined });
       setRemaining((n) => Math.max(0, n - 1));
       advance();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** يحفظ تعديلَ المراجِع في الحكم الحاليّ، ويعتمده بعدها إن طُلب. */
+  const saveEdit = async (body: RulingPatchBody, thenVerify = false) => {
+    if (!cur) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      if (Object.keys(body).some((k) => k !== 'reason')) {
+        const next = await api.patchRuling(cur.word.seq, cur.ruling.source, body);
+        setItems((all) => all.map((x, n) => (n === i ? { ...x, ruling: next } : x)));
+      }
+      if (thenVerify) {
+        await api.decide(cur.word.seq, cur.ruling.source, { decision: 'verify' });
+        setRemaining((n) => Math.max(0, n - 1));
+        advance();
+      } else {
+        setEditing(false);
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -105,11 +152,29 @@ export function Review() {
               </Link>
             </div>
 
-            <RulingCard ruling={cur.ruling} source={meta.sourceById[cur.ruling.source]} categories={meta.categories} />
+            {editing ? (
+              <RulingEditor
+                source={cur.ruling.source}
+                initial={cur.ruling}
+                busy={busy || !canWrite}
+                onSave={(b) => void saveEdit(b)}
+                onCancel={() => setEditing(false)}
+                extra={({ body }) => (
+                  <button type="button" className="btn" disabled={busy || !canWrite} onClick={() => void saveEdit(body, true)}>
+                    احفظ واعتمد
+                  </button>
+                )}
+              />
+            ) : (
+              <RulingCard ruling={cur.ruling} source={meta.sourceById[cur.ruling.source]} categories={meta.categories} />
+            )}
 
             <div className="decide">
-              <button type="button" className="btn primary" disabled={!canWrite || busy} onClick={() => decide('verify')}>
+              <button type="button" className="btn primary" disabled={!canWrite || busy || editing} onClick={() => decide('verify')}>
                 اعتمد
+              </button>
+              <button type="button" className="btn" disabled={!canWrite || busy} onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
+                عدِّل
               </button>
               <button type="button" className="btn danger" disabled={!canWrite || busy} onClick={() => setRejecting((v) => !v)} aria-expanded={rejecting}>
                 ارفض

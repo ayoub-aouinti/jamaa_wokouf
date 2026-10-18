@@ -201,6 +201,27 @@ export interface ReviewDecisionBody {
   reason?: string;
 }
 
+/**
+ * ما يعدّله المراجِعُ في حكمٍ قائم. كلُّ تعديلٍ يُقيَّد في سجلّ المراجعة بقيمته
+ * قبلُ وبعدُ، فلفظُ الكتاب الأصليُّ يبقى في السجلّ وإن غُيِّر هنا.
+ * `''` أو `null` يُفرِغ الحقلَ، وغيابُ الحقل يتركه.
+ */
+export interface RulingPatchBody {
+  raw?: string;
+  symbol?: string | null;
+  term?: string | null;
+  category?: CategoryId | null;
+  approx?: boolean;
+  note?: string | null;
+  reason?: string;
+}
+
+/** حكمٌ يُدخِله المراجِعُ يدوياً من الكتاب على كلمةٍ لا حكمَ فيها لهذا المصدر. */
+export interface RulingCreateBody extends RulingPatchBody {
+  source: string;
+  raw: string;
+}
+
 export interface TermPatch {
   reviewed?: boolean;
   category?: CategoryId | null;

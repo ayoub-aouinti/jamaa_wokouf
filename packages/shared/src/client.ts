@@ -5,6 +5,9 @@ import type {
   ReviewDecisionBody,
   ReviewQueue,
   Riwaya,
+  Ruling,
+  RulingCreateBody,
+  RulingPatchBody,
   RiwayaText,
   SearchHit,
   Source,
@@ -91,6 +94,10 @@ export function createClient(opts: ClientOptions) {
       request<ReviewQueue>('GET', '/review/queue', { source, limit, after }),
     decide: (seq: number, source: string, body: ReviewDecisionBody) =>
       request<{ ok: true }>('POST', `/review/${seq}/${encodeURIComponent(source)}`, undefined, body),
+    patchRuling: (seq: number, source: string, body: RulingPatchBody) =>
+      request<Ruling>('PATCH', `/rulings/${seq}/${encodeURIComponent(source)}`, undefined, body),
+    createRuling: (seq: number, body: RulingCreateBody) =>
+      request<Ruling>('POST', `/rulings/${seq}`, undefined, body),
     checkToken: () => request<{ ok: true; actor: string }>('POST', '/auth/check'),
   };
 }

@@ -318,3 +318,17 @@ textarea { height: auto; padding: 8px 10px; width: 100%; }
   .table { display: block; overflow-x: auto; }
   .page, .landing { padding-inline: 16px; }
 }
+
+/* ——— تعديلُ الحكم وإضافتُه في المراجعة ——— */
+.tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.tabs button { padding: 8px 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; cursor: pointer; font: inherit; color: var(--muted); }
+.tabs button[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--lapis); }
+.ruling-editor { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.ruling-editor-row { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.ruling-editor-row .field { flex: 1 1 140px; }
+.ruling-editor input[type='text'] { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper); font: inherit; }
+.ruling-editor textarea { width: 100%; box-sizing: border-box; }
+.w.pick { background: transparent; border: 0; border-bottom: 2px solid transparent; font: inherit; color: inherit; cursor: pointer; padding: 0 2px; line-height: 1.5; }
+.w.pick:hover { background: var(--hl); }
+.w.pick.sel { background: var(--hl-on); box-shadow: 0 0 0 2px var(--ink); }
+.add-word { margin: 0; font-size: 30px; font-weight: 400; }

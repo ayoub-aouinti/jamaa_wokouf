@@ -6,6 +6,21 @@ import { ReviewLogService } from './review-log.service.js';
 export type Decision = 'verify' | 'reject';
 
 const REJECT_PREFIX = 'رُدَّ في المراجعة: ';
+const MANUAL_CONFIDENCE = 'أدخله المراجِعُ يدوياً من الكتاب';
+const RULING_FULL_COLS_PLAIN = RULING_FULL_COLS.replace(/r\./g, '');
+
+/** حقولُ النصّ التي يعدّلها المراجِع؛ الفارغُ منها يصير NULL إلا raw فلا يَفرَغ. */
+const EDITABLE_TEXT = ['raw', 'symbol', 'term', 'note'] as const;
+
+export interface RulingPatch {
+  raw?: string;
+  symbol?: string | null;
+  term?: string | null;
+  category?: string | null;
+  approx?: boolean;
+  note?: string | null;
+  reason?: string;
+}
 
 @Injectable()
 export class ReviewService {
@@ -109,6 +124,98 @@ export class ReviewService {
       });
       return { ok: true as const };
     });
+  }
+
+  /**
+   * تعديلُ المراجِع حكماً قائماً: لفظَ المصدر ورمزَه ومصطلحَه وفئتَه العامّة
+   * وعلّتَه. لا يمسّ الحالَ (الاعتمادُ قرارٌ مستقلّ)، ويُقيَّد بقيمته قبلُ
+   * وبعدُ، فلفظُ الكتاب الأصليُّ يبقى في السجلّ وإن صُحِّح في الحكم.
+   */
+  async patchRuling(seq: number, source: string, patch: RulingPatch, actor: string) {
+    await this.log.require();
+    const sets: string[] = [];
+    const params: unknown[] = [seq, source];
+    const set = (col: string, v: unknown) => {
+      params.push(v);
+      sets.push(`${col} = $${params.length}`);
+    };
+    for (const col of EDITABLE_TEXT) {
+      if (patch[col] !== undefined) set(col, patch[col]);
+    }
+    if (patch.category !== undefined) {
+      await this.checkCategory(patch.category);
+      set('category', patch.category);
+    }
+    if (patch.approx !== undefined) set('approx', patch.approx);
+    if (!sets.length) throw new BadRequestException('لا شيءَ يُعدَّل.');
+
+    return this.db.tx(async (c) => {
+      const cur = await c.query(
+        `SELECT ${RULING_FULL_COLS} FROM rulings r WHERE r.seq = $1 AND r.source = $2 FOR UPDATE`,
+        [seq, source],
+      );
+      const before = cur.rows[0];
+      if (!before) throw new NotFoundException('لا حكمَ لهذا المصدر في هذا الموضع.');
+      const upd = await c.query(
+        `UPDATE rulings r SET ${sets.join(', ')} WHERE seq = $1 AND source = $2 RETURNING ${RULING_FULL_COLS}`,
+        params,
+      );
+      const after = upd.rows[0];
+      await this.log.write(c, {
+        actor,
+        entity: 'ruling',
+        key: { seq, source },
+        action: 'patch',
+        before,
+        after,
+        reason: patch.reason?.trim() || null,
+      });
+      return after;
+    });
+  }
+
+  /**
+   * حكمٌ يُدخِله المراجِعُ من الكتاب على كلمةٍ ليس لهذا المصدر فيها حكم.
+   * يُقيَّد محقَّقاً لأنّ مراجِعاً أدخله بنفسه، وعلى `confidence` ما يدلّ على
+   * ذلك، فلا يُحسَب مستورَداً. وخلوُّ الموضع من حكمٍ ليس نفياً، فلا يُستنتَج
+   * من الإدخال شيءٌ عن غيره.
+   */
+  async createRuling(seq: number, source: string, body: RulingPatch & { raw: string }, actor: string) {
+    await this.log.require();
+    if (!body.raw?.trim()) throw new BadRequestException('لفظُ المصدر (raw) مطلوب.');
+    if (body.category !== undefined) await this.checkCategory(body.category);
+    return this.db.tx(async (c) => {
+      const w = await c.query('SELECT 1 FROM words WHERE seq = $1', [seq]);
+      if (!w.rows[0]) throw new NotFoundException('لا كلمةَ بهذا الرقم.');
+      const s = await c.query('SELECT 1 FROM sources WHERE id = $1', [source]);
+      if (!s.rows[0]) throw new BadRequestException(`لا مصدرَ بالمعرّف ${source}.`);
+      const dup = await c.query('SELECT 1 FROM rulings WHERE seq = $1 AND source = $2', [seq, source]);
+      if (dup.rows[0]) throw new ConflictException('لهذا المصدر حكمٌ في هذا الموضع، فعدِّله ولا تُنشئ.');
+      const ins = await c.query(
+        `INSERT INTO rulings (seq, source, raw, symbol, term, category, approx, note, status, confidence)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'verified', $9)
+         RETURNING ${RULING_FULL_COLS_PLAIN}`,
+        [seq, source, body.raw, body.symbol ?? null, body.term ?? null, body.category ?? null,
+          body.approx ?? false, body.note ?? null, MANUAL_CONFIDENCE],
+      );
+      const after = ins.rows[0];
+      await this.log.write(c, {
+        actor,
+        entity: 'ruling',
+        key: { seq, source },
+        action: 'create',
+        before: null,
+        after,
+        reason: body.reason?.trim() || null,
+      });
+      return after;
+    });
+  }
+
+  private async checkCategory(id: string | null) {
+    if (id === null) return;
+    const ok = await this.db.one('SELECT 1 AS ok FROM categories WHERE id = $1', [id]);
+    if (!ok) throw new BadRequestException(`لا فئةَ بالمعرّف ${id}.`);
   }
 }
 
